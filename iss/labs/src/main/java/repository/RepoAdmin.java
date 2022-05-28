@@ -1,49 +1,39 @@
 package repository;
 
 import domain.Admin;
+import domain.Agent;
 import domain.validator.Validator;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import repository.interfaces.RepositoryAdmin;
 
+import javax.persistence.Query;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class RepoAdmin implements RepositoryAdmin {
+public class RepoAdmin extends HibernateRepository implements RepositoryAdmin {
     private String url;
     private String username;
     private String password;
     private Validator<Admin> validator;
+
 
     public RepoAdmin(String url, String username, String password, Validator<Admin> validator) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.validator = validator;
+        initialize();
+
+
     }
 
     @Override
     public void add(Admin entity) {
-        if (entity == null)
-            throw new IllegalArgumentException("Entity must be not null");
-        validator.validate(entity);
-        String sql = "insert into admins (usernameu,passwordu) values (?,?)";
 
-        try (Connection connection = DriverManager.getConnection(url, username, password);
-             PreparedStatement ps = connection.prepareStatement(sql)
-        ) {
-
-            ps.setString(1, entity.getUsername());
-            ps.setString(2, entity.getPassword());
-
-            ps.executeUpdate();
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
 
     }
 
@@ -52,58 +42,47 @@ public class RepoAdmin implements RepositoryAdmin {
         if (string == null)
             throw new IllegalArgumentException("username must be not null");
 
+        List<Admin> parts = new ArrayList<>();
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = null;
+            try {
+                transaction = session.beginTransaction();///////////////////////
+                Query query= session.createQuery("select g from Admin g where g.username = :team", Admin.class);
+                query.setParameter("team",string);
+                parts =query.getResultList();
+                transaction.commit();
 
-        String sql = "SELECT * from admins where admins.usernameu = ? ";
-        Admin ev;
+            } catch (RuntimeException exception) {
+                if (transaction != null)
+                    transaction.rollback();
 
-        try (Connection connection = DriverManager.getConnection(url, username, password);
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1,string);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                Integer id = resultSet.getInt("id");
-                String st1 = resultSet.getString("usernameu");
-                String st2 = resultSet.getString("passwordu");
-
-                ev = new Admin(st1,st2 );
-                ev.setID(id);
-
-                return ev;
-
+                System.err.println("Error BD " +exception);
             }
-
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
         }
 
-        return null;
+
+        return parts.get(0);
     }
 
     @Override
     public Iterable<Admin> findAll() {
-        String sql = "SELECT * from admins ";
-        Admin ev;
-        Set<Admin> events = new HashSet<>();
-        try (Connection connection = DriverManager.getConnection(url, username, password);
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                Integer id = resultSet.getInt("id");
-                String st1 = resultSet.getString("usernameu");
-                String st2 = resultSet.getString("passwordu");
+        List<Admin> parts=new ArrayList<>();
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = null;
+            try {
+                transaction = session.beginTransaction();
+                parts = session.createQuery("from Admin as p order by p.username", Admin.class).list();
+                transaction.commit();
 
-                ev = new Admin(st1,st2);
-                ev.setID(id);
+            } catch (RuntimeException exception) {
+                if (transaction != null)
+                    transaction.rollback();
 
-
-                events.add(ev);
-
+                System.err.println("Error BD "+exception );
             }
-
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
         }
 
-        return events;
+
+        return parts;
     }
 }

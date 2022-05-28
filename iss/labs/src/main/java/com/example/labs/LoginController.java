@@ -16,6 +16,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import repository.RepoProduct;
 import repository.interfaces.Repository;
 import repository.interfaces.RepositoryAdmin;
 import repository.interfaces.RepositoryAgent;
@@ -44,13 +45,13 @@ public class LoginController {
         Stage dialogStage;
         RepositoryAgent repositoryAgent;
         RepositoryAdmin repositoryAdmin;
-        RepositoryProduct repositoryProduct;
+        RepoProduct repoProduct;
         Parent mainChatParent;
-        public void set(RepositoryAgent repo1, RepositoryAdmin repo2,RepositoryProduct repo3,Stage stage)
+        public void set(RepositoryAgent repo1, RepositoryAdmin repo2, RepoProduct repo3, Stage stage)
         {
                 repositoryAdmin=repo2;
                 repositoryAgent=repo1;
-                repositoryProduct=repo3;
+                repoProduct=repo3;
                 this.dialogStage = stage;
         }
         public void handleLogin(ActionEvent actionEvent) {
@@ -66,6 +67,8 @@ public class LoginController {
                                 if(adm!=null && Objects.equals(adm.getPassword(), password))
                                 {
                                         showMessageTaskEditDialog(adm,"admin.fxml");
+                                        textFieldId.setText("");
+                                        textFieldPassword.setText("");
                                 }
                                 else{
                                         textFieldPassword.setText("");
@@ -78,6 +81,8 @@ public class LoginController {
                                 Agent agn = (Agent) repositoryAgent.findOneByUsername(username);
                                 if (agn != null && Objects.equals(agn.getPassword(), password)) {
                                         showMessageTaskEditDialog(agn, "agentEmployee.fxml");
+                                        textFieldId.setText("");
+                                        textFieldPassword.setText("");
                                 } else {
                                         textFieldPassword.setText("");
                                         MessageAlert.showErrorMessage(null, "credintiale incorecte");
@@ -100,7 +105,29 @@ public class LoginController {
 
 
         }
-        public void showMessageTaskEditDialog(User user,String fxml) {
+        public void showMessageTaskEditDialog(Admin user,String fxml) {
+                try {
+                        // create a new stage for the popup dialog.
+                        FXMLLoader loader = new FXMLLoader();
+                        loader.setLocation(getClass().getResource(fxml));
+
+                        AnchorPane root = (AnchorPane) loader.load();
+
+                        Stage dialogStage = new Stage();
+                        Scene scene = new Scene(root);
+                        dialogStage.setScene(scene);
+
+                        MainController menuController = loader.getController();
+                        menuController.set(user,repositoryAgent,repositoryAdmin,repoProduct,dialogStage);
+
+
+                        dialogStage.show();
+
+                } catch (IOException e) {
+                        e.printStackTrace();
+                }
+        }
+        public void showMessageTaskEditDialog(Agent user,String fxml) {
                 try {
                         // create a new stage for the popup dialog.
                         FXMLLoader loader = new FXMLLoader();
@@ -109,11 +136,12 @@ public class LoginController {
                         AnchorPane root = (AnchorPane) loader.load();
 
 
+                        Stage dialogStage = new Stage();
                         Scene scene = new Scene(root);
                         dialogStage.setScene(scene);
-
-                        MainController menuController = loader.getController();
-                        menuController.set(repositoryAgent,repositoryAdmin,repositoryProduct,dialogStage);
+                        //pentru admin agent
+                        EmplController menuController = loader.getController();
+                        menuController.set(user,repositoryAgent,repositoryAdmin,repoProduct,dialogStage);
 
 
                         dialogStage.show();

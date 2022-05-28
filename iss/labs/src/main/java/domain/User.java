@@ -9,7 +9,10 @@ public class User implements Identifiable<Integer>, Serializable {
         this.username = username;
         this.password = password;
     }
+    public User()
+    {
 
+    }
     Integer ID;
     public Integer getID(){
         return ID;

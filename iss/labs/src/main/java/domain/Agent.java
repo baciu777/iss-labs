@@ -10,6 +10,10 @@ public class Agent extends User {
         super(username, password);
     }
 
+    public Agent() {
+
+    }
+
     public String getUsername() {
         return username;
     }

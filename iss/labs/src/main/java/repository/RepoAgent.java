@@ -4,45 +4,36 @@ package repository;
 import domain.Admin;
 import domain.Agent;
 import domain.validator.Validator;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import repository.interfaces.RepositoryAgent;
 
+import javax.persistence.Query;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-public class RepoAgent implements RepositoryAgent {
+public class RepoAgent extends HibernateRepository implements RepositoryAgent {
     private String url;
     private String username;
     private String password;
     private Validator<Agent> validator;
+
 
     public RepoAgent(String url, String username, String password, Validator<Agent> validator) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.validator = validator;
+        initialize();
     }
 
     @Override
     public void add(Agent entity) {
-        if (entity == null)
-            throw new IllegalArgumentException("Entity must be not null");
-        validator.validate(entity);
-        String sql = "insert into agents (usernameu,passwordu) values (?,?)";
 
-        try (Connection connection = DriverManager.getConnection(url, username, password);
-             PreparedStatement ps = connection.prepareStatement(sql)
-        ) {
-
-            ps.setString(1, entity.getUsername());
-            ps.setString(2, entity.getPassword());
-
-            ps.executeUpdate();
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
 
     }
 
@@ -52,58 +43,50 @@ public class RepoAgent implements RepositoryAgent {
             throw new IllegalArgumentException("username must be not null");
 
 
-        String sql = "SELECT * from agents where agents.usernameu = ? ";
-        Agent ev;
 
-        try (Connection connection = DriverManager.getConnection(url, username, password);
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1,string);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                Integer id = resultSet.getInt("id");
-                String st1 = resultSet.getString("usernameu");
-                String st2 = resultSet.getString("passwordu");
 
-                ev = new Agent(st1,st2 );
-                ev.setID(id);
+        List<Agent> parts = new ArrayList<>();
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = null;
+            try {
+                transaction = session.beginTransaction();///////////////////////
+                Query query= session.createQuery("select g from Agent g where g.username = :team", Agent.class);
+                query.setParameter("team",string);
+                parts =query.getResultList();
+                transaction.commit();
 
-                return ev;
+            } catch (RuntimeException exception) {
+                if (transaction != null)
+                    transaction.rollback();
 
+                System.err.println("Error BD " +exception);
             }
-
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
         }
 
-        return null;
+
+        return parts.get(0);
     }
 
     @Override
     public Iterable<Agent> findAll() {
-        String sql = "SELECT * from agents ";
-        Agent ev;
-        Set<Agent> events = new HashSet<>();
-        try (Connection connection = DriverManager.getConnection(url, username, password);
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                Integer id = resultSet.getInt("id");
-                String st1 = resultSet.getString("usernameu");
-                String st2 = resultSet.getString("passwordu");
+        List<Agent> parts=new ArrayList<>();
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = null;
+            try {
+                transaction = session.beginTransaction();
+                parts = session.createQuery("from Agent as p order by p.username", Agent.class).list();
+                transaction.commit();
 
-                ev = new Agent(st1,st2);
-                ev.setID(id);
+            } catch (RuntimeException exception) {
+                if (transaction != null)
+                    transaction.rollback();
 
-
-                events.add(ev);
-
+                System.err.println("Error BD "+exception );
             }
-
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
         }
 
-        return events;
+
+        return parts;
     }
 
 }

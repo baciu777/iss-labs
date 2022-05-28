@@ -7,6 +7,11 @@ public class Product implements Identifiable<Integer>, Serializable {
     private String name,provider;
     int quantity;
     int price;
+
+    public Product() {
+
+    }
+
     public Integer getID(){
         return ID;
     }

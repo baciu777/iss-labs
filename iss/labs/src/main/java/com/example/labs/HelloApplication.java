@@ -30,7 +30,8 @@ public class HelloApplication extends Application {
 
         RepositoryAgent repoAgents = new RepoAgent("jdbc:postgresql://localhost:5432/agency", "postgres", "ioana", new AgentValidator());
         repoAgents.findAll().forEach(System.out::println);
-        RepositoryProduct repoProduct = new RepoProduct("jdbc:postgresql://localhost:5432/agency", "postgres", "ioana", new ProductValidation());
+        //atentie aici e repoProduct altfel nu vede observeru extins in clasa
+        RepoProduct repoProduct = new RepoProduct("jdbc:postgresql://localhost:5432/agency", "postgres", "ioana", new ProductValidation());
         repoAgents.findAll().forEach(System.out::println);
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("login.fxml"));
         Parent root= fxmlLoader.load();
